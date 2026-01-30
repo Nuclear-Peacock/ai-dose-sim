@@ -3,38 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phase 2 Simulation: Low Dose Acquisition</title>
+    <title>Phase 2: AI Acquisition Simulator</title>
     <style>
-        body { font-family: sans-serif; background: #111; color: #eee; text-align: center; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background: #222; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        canvas { max-width: 100%; border: 1px solid #555; border-radius: 4px; }
-        input[type=range] { width: 100%; margin: 20px 0; }
-        .labels { display: flex; justify-content: space-between; color: #aaa; font-size: 0.9em; }
-        .status { margin-top: 15px; font-weight: bold; color: #00ffcc; min-height: 24px; }
-        .loading { color: #ffcc00; font-style: italic; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; text-align: center; padding: 20px; }
+        .container { max-width: 700px; margin: 0 auto; background: #161b22; padding: 25px; border-radius: 12px; border: 1px solid #30363d; }
+        h2 { color: #58a6ff; margin-bottom: 5px; }
+        .subtitle { color: #8b949e; font-size: 0.9em; margin-bottom: 25px; font-style: italic; }
+        canvas { max-width: 100%; border: 1px solid #30363d; border-radius: 6px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .controls { margin-top: 25px; padding: 15px; background: #21262d; border-radius: 8px; }
+        input[type=range] { width: 100%; margin: 15px 0; cursor: pointer; }
+        .labels { display: flex; justify-content: space-between; font-size: 0.8em; color: #8b949e; font-weight: bold; }
+        .status { margin-top: 15px; font-size: 1.1em; font-weight: bold; color: #3fb950; min-height: 24px; }
+        .loader { color: #d29922; font-weight: bold; }
+        .footer { margin-top: 30px; font-size: 0.7em; color: #484f58; border-top: 1px solid #30363d; padding-top: 15px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>AI Dose Reduction Simulator</h2>
-    <p style="color: #aaa; font-size: 0.9em;">Phase 2: Image Acquisition & Reconstruction</p>
+    <h2>Phase 2: Image Acquisition</h2>
+    <div class="subtitle">Demonstrating AI Reconstruction for Dose Reduction</div>
     
     <canvas id="displayCanvas"></canvas>
-    <div id="loadingText" class="loading">Loading and generating noise layers...</div>
+    <div id="loadingText" class="loader">Initializing Simulation...</div>
 
     <div class="controls" style="display:none;" id="controls">
         <input type="range" min="0" max="100" value="100" id="doseSlider">
         <div class="labels">
-            <span>Low Dose (Noisy)</span>
-            <span>Standard Dose (AI Clean)</span>
+            <span>Low Dose (High Noise)</span>
+            <span>Standard Dose / AI Clean</span>
         </div>
-        <div class="status" id="statusText">AI Reconstruction: 100%</div>
+        <div class="status" id="statusText">Reconstruction Quality: 100%</div>
+    </div>
+
+    <div class="footer">
+        <strong>EDUCATIONAL SIMULATION ONLY</strong><br>
+        Visualizes the concept of AI denoising in low-dose CT protocols.<br>
+        Not for clinical diagnostic use.
     </div>
 </div>
 
 <script>
-    const imagePath = 'ct-slice.jpg'; // MAKE SURE THIS MATCHES YOUR FILENAME
+    // CONFIGURATION
+    const imagePath = 'ct-slice.jpg'; 
+
     const canvas = document.getElementById('displayCanvas');
     const ctx = canvas.getContext('2d');
     const slider = document.getElementById('doseSlider');
@@ -42,71 +54,62 @@
     const controls = document.getElementById('controls');
     const loadingText = document.getElementById('loadingText');
 
-    let originalData = null; // Store the clean pixel data
+    let originalData = null; 
 
     const img = new Image();
     img.crossOrigin = "Anonymous";
     img.src = imagePath;
 
     img.onload = function() {
-        // 1. Setup Canvas
         canvas.width = img.width;
         canvas.height = img.height;
         ctx.drawImage(img, 0, 0);
-        
-        // 2. Save Original (Clean) Pixel Data
         originalData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        
-        // 3. Ready to go
         loadingText.style.display = 'none';
         controls.style.display = 'block';
-        addNoise(0); // Initialize with 0 noise (clean)
     };
 
     img.onerror = function() {
-        loadingText.innerText = "Error: Could not load image. Check filename in GitHub.";
-        loadingText.style.color = "red";
+        loadingText.innerHTML = "❌ Error: <code>ct-slice.jpg</code> not found.<br>Make sure the file is uploaded to GitHub with this exact name.";
+        loadingText.style.color = "#f85149";
     };
 
-    // SLIDER EVENT LISTENER
     slider.oninput = function() {
-        // Invert value: Slider 100 = 0 Noise. Slider 0 = Max Noise.
         const intensity = 100 - this.value;
         addNoise(intensity);
 
-        // Update Text
-        if (this.value == 100) statusText.innerText = "AI Reconstruction: 100% (Original Fidelity)";
-        else if (this.value < 30) statusText.innerText = "Simulating: Ultra-Low Dose (Raw)";
-        else statusText.innerText = `Simulating: ${this.value}% Dose`;
+        if (this.value == 100) {
+            statusText.innerText = "Reconstruction Quality: 100% (Baseline)";
+            statusText.style.color = "#3fb950"; // Green
+        } else if (this.value < 40) {
+            statusText.innerText = "Reconstruction Quality: " + this.value + "% (Non-Diagnostic)";
+            statusText.style.color = "#f85149"; // Red
+        } else {
+            statusText.innerText = "Reconstruction Quality: " + this.value + "%";
+            statusText.style.color = "#d29922"; // Yellow
+        }
     };
 
-    // NOISE GENERATOR FUNCTION
     function addNoise(intensity) {
         if (!originalData) return;
-
-        // Create a copy of the original pixels
         const processed = ctx.createImageData(canvas.width, canvas.height);
         const data = processed.data;
         const source = originalData.data;
-        
-        // Noise factor (0 to 100)
-        const factor = intensity * 1.5; 
+        const factor = intensity * 2.0; // Noise multiplier
 
         for (let i = 0; i < data.length; i += 4) {
-            // Generate simple random noise
-            // (Math.random() - 0.5) gives range [-0.5, 0.5]
-            const noise = (Math.random() - 0.5) * factor;
+            // Gaussian-ish noise approximation
+            const r1 = Math.random();
+            const r2 = Math.random();
+            const noise = (Math.sqrt(-2.0 * Math.log(r1)) * Math.cos(2.0 * Math.PI * r2)) * factor;
 
-            // Apply noise to RGB channels
-            data[i] = source[i] + noise;     // Red
-            data[i+1] = source[i+1] + noise; // Green
-            data[i+2] = source[i+2] + noise; // Blue
-            data[i+3] = 255;                 // Alpha (Solid)
+            data[i] = Math.min(255, Math.max(0, source[i] + noise));     
+            data[i+1] = Math.min(255, Math.max(0, source[i+1] + noise)); 
+            data[i+2] = Math.min(255, Math.max(0, source[i+2] + noise)); 
+            data[i+3] = 255; 
         }
-
         ctx.putImageData(processed, 0, 0);
     }
 </script>
-
 </body>
 </html>
