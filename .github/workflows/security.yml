@@ -6,8 +6,8 @@ on:
   pull_request:
     branches: ["main"]
   schedule:
-    - cron: '0 0 * * 1' # Runs weekly on Monday at midnight
-  workflow_dispatch:      # Manual trigger button
+    - cron: '0 0 * * 1' # Runs every Monday at midnight
+  workflow_dispatch:      # Allows manual trigger
 
 jobs:
   scan:
@@ -17,7 +17,7 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Run Gitleaks
